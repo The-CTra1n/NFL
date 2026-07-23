@@ -5,18 +5,18 @@ Created on Fri Jun 9 15:46:07 2023
 @author: Conor McMenamin
 """
 
-import pandas as pd 
+import pandas as pd
 import random
 import math
 import csv
 
 import itertools
-# Read data from file 'filename.csv' 
+# Read data from file 'filename.csv'
 # (in the same directory that your python process is based)
-# Control delimiters, rows, column names with read_csv (see later) 
+# Control delimiters, rows, column names with read_csv (see later)
 
-   
-            
+
+
 matchesData = pd.read_csv("GameResults.csv").values.tolist()
 teamsData=pd.read_csv("TeamPayouts.csv").values.tolist()
 
@@ -39,7 +39,7 @@ teamDivision=dict([(divisions[i] ,[] ) for i in range(0,len(divisions))])
 divisionTeam=dict([(teams[i]+'' ,teamsData[i][1] ) for i in range(0,32)])
 for i in range(0,32):
     teamDivision[teamsData[i][1]].append(teamsData[i][0])
-    
+
 teamELOs=dict([(teams[i]+'' ,teamsData[i][3] ) for i in range(0,32)])
 
 mult=1
@@ -71,7 +71,7 @@ def sim_match_home_win_probs(team1,team2):
     elo1=teamELOs[team1]
     elo2=teamELOs[team2]
     return(1/(math.pow(10,mult*(elo2-(elo1+55))/400)+1))
-  
+
 playoffCounts=dict([(teams[i]+'' ,0 ) for i in range(0,32)])
 divisionWinCounts=dict([(teams[i]+'' ,0 ) for i in range(0,32)])
 winCounts=dict([(teams[i]+'' ,0 ) for i in range(0,32)])
@@ -113,16 +113,16 @@ simGameROI=0
 weekEV=0
 preGameHome=0
 for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
-    
+
     if r % rounds==0 and r>rounds:
-        
+
         if not(r % (2*rounds))==0:
             homeWinProbs[currentGame]=sim_match_home_win_probs(matchesTeams[currentGame][0],matchesTeams[currentGame][1])
             gameEV=int((homeWinProbs[currentGame]*(simGameROI-standard)/rounds)+((1-homeWinProbs[currentGame])*(awayWin-standard)/rounds))
             weekEV+=gameEV
             print(matchesTeams[currentGame][1]+" win:",int((awayWin-standard)/rounds),"@ " + matchesTeams[currentGame][0]+" win:",int((simGameROI-standard)/rounds), "Expectancy:",gameEV )
             currentGame+=1
-            
+
         awayWin=simGameROI
         simGameROI=0
         home=(home+1)%2
@@ -140,25 +140,25 @@ for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
                 homeWinProbs[i]=sim_match_home_win_probs(matchesTeams[i][0],matchesTeams[i][1])
 
         homeWinProbs[currentGame]=home
-    
-        
-    
+
+
+
     rOI=0
-    teamCounts=dict([(teams[i]+'' ,0 ) for i in range(0,32)])   
+    teamCounts=dict([(teams[i]+'' ,0 ) for i in range(0,32)])
     teamConference=dict([("AFC",[]),("NFC",[])])
     for i in range(0,32):
         teamConference[teamsData[i][2]].append(teamsData[i][0])
-        
+
     for i in range(0, numMatches):
         #print(matchesTeams[i][0],homeWinProbs[i])
         if random.random()<homeWinProbs[i]:
             teamCounts[matchesTeams[i][0]]+=1
         else:
             teamCounts[matchesTeams[i][1]]+=1
-            
+
     for i in range(0, 32):
         teamGameWins[teams[i]]=(teamGameWins[teams[i]]*r+teamCounts[teams[i]])/(r+1)
-        
+
     playoffTeams=dict([("AFC",[]),("NFC",[])])
     byeAFC=teamConference["AFC"][0]
     for i in teamConference["AFC"]:
@@ -167,17 +167,17 @@ for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
         if teamCounts[i]==teamCounts[byeAFC]:
             if random.random()>0.5:
                 byeAFC=i
-    semis=[] 
-                   
+    semis=[]
+
     semis.append(byeAFC)
     teamCounts.pop(byeAFC)
     divChampAFC=divisionTeam[byeAFC]
     teamConference[divChampAFC[:3]].pop(teamConference[divChampAFC[:3]].index(byeAFC))
     playoffs=["" for i in range(0,12)]
     byeNFC=teamConference["NFC"][0]
-    
+
     for i in teamConference["NFC"]:
-        
+
         if teamCounts[i]>teamCounts[byeNFC]:
             byeNFC=i
         if teamCounts[i]==teamCounts[byeNFC]:
@@ -185,7 +185,7 @@ for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
                 byeNFC=i
     semis.append(byeNFC)
     teamCounts.pop(byeNFC)
-    
+
     divChampNFC=divisionTeam[byeNFC]
     teamConference[divChampNFC[:3]].pop(teamConference[divChampNFC[:3]].index(byeNFC))
     place=0
@@ -204,18 +204,18 @@ for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
                         winner=l
             teamDivisionWins[winner]+=1
             teamMadePlayoffs[winner]+=1
-        
+
             teamCounts.pop(winner)
             if(not(winner in semis)):
                 playoffs[place]=winner
                 place+=1
                 rOI+=(teamPayoffs[winner][0]+teamPayoffs[winner][1])
             teamConference[k[:3]].pop(teamConference[k[:3]].index(winner))
-    
+
     for k in conferences:
         for i in range(0,3):
             winner=teamConference[k][0]
-        
+
             for l in teamConference[k]:
                 if teamCounts[l]>teamCounts[winner]:
                     winner=l
@@ -228,17 +228,17 @@ for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
             rOI+=(teamPayoffs[winner][0])
             place+=1
             teamConference[k].pop(teamConference[k].index(winner))
-    
+
     for key in notPlayoffPayoffs.keys():
         if( not( key in playoffs or key in semis)):
             rOI+=notPlayoffPayoffs[key]
-    
-    
-    
-    
-        
-    
-    
+
+
+
+
+
+
+
     for i in range(0,6):
         if(i<3):
             semis.append(sim_match_playoff(playoffs[i], playoffs[8-i]))
@@ -248,18 +248,18 @@ for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
     confFinals.append(sim_match_playoff(semis[0],semis[4]))
     confFinals.append(sim_match_playoff(semis[2],semis[3]))
     confFinals.append(sim_match_playoff(semis[1],semis[7]))
-    confFinals.append(sim_match_playoff(semis[5],semis[6]))    
+    confFinals.append(sim_match_playoff(semis[5],semis[6]))
     superbowl=[]
     superbowl.append(sim_match_playoff(confFinals[0],confFinals[1]))
     superbowl.append(sim_match_playoff(confFinals[2],confFinals[3]))
     for i in superbowl:
         rOI+=(teamPayoffs[i][2])
-    
+
     winner=sim_match_superbowl(superbowl[0],superbowl[1])
     rOI+=(teamPayoffs[winner][3])
     totalROI+=rOI
     simGameROI+=rOI
-    
+
     """
     results.append([])
     results[r].append(byeAFC)
@@ -271,11 +271,11 @@ for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
     for i in confFinals:
         results[r].append(i)
     for i in superbowl:
-        results[r].append(i)    
+        results[r].append(i)
     results[r].append(winner)
     results[r].append(rOI)
     """
-    
+
     if (r+1)<=rounds:
         for i in playoffs:
             playoffCounts[i]+=1
@@ -306,6 +306,6 @@ for r in range(0,rounds*((2*numberOfGameSims)+1)+1):
                 print(i,playoffCounts[i]/rounds,teamDivisionWins[i]/rounds,superbowlCounts[i]/rounds,winCounts[i]/rounds,int(teamGameWins[i]*100)/100)
 
 
-        
+
 print("Week Expectancy:", weekEV)
 print("Book Value", int(standard/rounds))
